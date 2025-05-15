@@ -1,3 +1,4 @@
+// Pesquisa Swing GUI Assist ---> Recomendação do Matheus para parar de sofrer com muitas linhas de código >:)
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -18,6 +19,8 @@ public class Main {
     private JButton excluirButton;
     private JButton listarOrdemAdicaoButton;
     private JButton listarOrdemAlfabeticaButton;
+    private JButton abrirBlocoNotasButton;
+    private JButton abrirCalendarioButton;
     private JTextArea outputArea;
 
     private static final String ARQUIVO_CSV = "contatos.csv";
@@ -39,12 +42,12 @@ public class Main {
 
     private void initialize() {
         frame = new JFrame("Agenda de Contatos");
-        frame.setBounds(100, 100, 750, 550);
+        frame.setBounds(100, 100, 750, 600);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.getContentPane().setLayout(new BorderLayout(0, 0));
 
         JPanel inputPanel = new JPanel();
-        inputPanel.setLayout(new GridLayout(8, 2, 5, 5));
+        inputPanel.setLayout(new GridLayout(10, 2, 5, 5));
         frame.getContentPane().add(inputPanel, BorderLayout.NORTH);
 
         // Campos do formulário
@@ -52,7 +55,6 @@ public class Main {
         nomeField = new JTextField();
         inputPanel.add(nomeField);
 
-        // Campo de telefone com checkbox e tipo
         inputPanel.add(new JLabel("Telefone:"));
         JPanel telefonePanel = new JPanel(new BorderLayout(5, 5));
         telefoneCheckBox = new JCheckBox();
@@ -71,7 +73,6 @@ public class Main {
         telefonePanel.add(telefoneSubPanel, BorderLayout.CENTER);
         inputPanel.add(telefonePanel);
 
-        // Campo de email com checkbox
         inputPanel.add(new JLabel("E-mail:"));
         JPanel emailPanel = new JPanel(new BorderLayout(5, 5));
         emailCheckBox = new JCheckBox();
@@ -87,7 +88,7 @@ public class Main {
         statusCombo = new JComboBox<>(new String[] {"Estudante", "Docente", "Direção", "Instituição"});
         inputPanel.add(statusCombo);
 
-        // Botões - Ordem alterada conforme solicitado
+        // Botões
         salvarButton = new JButton("Salvar Contato");
         salvarButton.addActionListener(e -> salvarContato());
         inputPanel.add(salvarButton);
@@ -104,14 +105,176 @@ public class Main {
         listarOrdemAlfabeticaButton.addActionListener(e -> listarContatos(true));
         inputPanel.add(listarOrdemAlfabeticaButton);
 
+        abrirBlocoNotasButton = new JButton("Abrir Bloco de Notas");
+        abrirBlocoNotasButton.addActionListener(e -> abrirBlocoDeNotas());
+        inputPanel.add(abrirBlocoNotasButton);
+
+        // Botão do Calendário
+        abrirCalendarioButton = new JButton("Abrir Calendário");
+        abrirCalendarioButton.addActionListener(e -> abrirCalendario());
+        inputPanel.add(abrirCalendarioButton);
+
         // Área de saída
         outputArea = new JTextArea();
         outputArea.setEditable(false);
         JScrollPane scrollPane = new JScrollPane(outputArea);
         frame.getContentPane().add(scrollPane, BorderLayout.CENTER);
 
-        // Verifica se o arquivo CSV existe, se não, cria
         verificarArquivoCSV();
+    }
+
+    private void abrirCalendario() {
+        JFrame calendarioFrame = new JFrame("Calendário");
+        calendarioFrame.setSize(400, 400);
+        calendarioFrame.setLocationRelativeTo(frame);
+
+        JPanel panel = new JPanel(new BorderLayout());
+        JLabel monthLabel = new JLabel("", SwingConstants.CENTER);
+        JButton prevButton = new JButton("<");
+        JButton nextButton = new JButton(">");
+
+        Calendar calendar = Calendar.getInstance();
+        updateMonthLabel(monthLabel, calendar);
+
+        prevButton.addActionListener(evt -> {
+            calendar.add(Calendar.MONTH, -1);
+            updateMonthLabel(monthLabel, calendar);
+            updateDaysPanel(panel, calendar, monthLabel);
+        });
+
+        nextButton.addActionListener(evt -> {
+            calendar.add(Calendar.MONTH, 1);
+            updateMonthLabel(monthLabel, calendar);
+            updateDaysPanel(panel, calendar, monthLabel);
+        });
+
+        JPanel buttonPanel = new JPanel(new BorderLayout());
+        buttonPanel.add(prevButton, BorderLayout.WEST);
+        buttonPanel.add(nextButton, BorderLayout.EAST);
+
+        panel.add(monthLabel, BorderLayout.NORTH);
+        panel.add(buttonPanel, BorderLayout.SOUTH);
+
+        updateDaysPanel(panel, calendar, monthLabel);
+        calendarioFrame.add(panel);
+        calendarioFrame.setVisible(true);
+    }
+
+    private void updateDaysPanel(JPanel mainPanel, Calendar calendar, JLabel monthLabel) {
+        // Remove o painel de dias antigo se existir
+        Component oldDaysPanel = null;
+        for (Component c : mainPanel.getComponents()) {
+            if (c instanceof JPanel && "daysPanel".equals(c.getName())) {
+                oldDaysPanel = c;
+                break;
+            }
+        }
+        if (oldDaysPanel != null) {
+            mainPanel.remove(oldDaysPanel);
+        }
+
+        // Cria novo painel de dias
+        JPanel daysPanel = new JPanel(new GridLayout(0, 7));
+        daysPanel.setName("daysPanel");
+
+        String[] daysOfWeek = {"Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"};
+        for (String day : daysOfWeek) {
+            JLabel label = new JLabel(day, SwingConstants.CENTER);
+            label.setFont(label.getFont().deriveFont(Font.BOLD));
+            daysPanel.add(label);
+        }
+
+        Calendar tempCalendar = (Calendar) calendar.clone();
+        tempCalendar.set(Calendar.DAY_OF_MONTH, 1);
+        int firstDayOfWeek = tempCalendar.get(Calendar.DAY_OF_WEEK);
+        int daysInMonth = tempCalendar.getActualMaximum(Calendar.DAY_OF_MONTH);
+
+        // Espaços vazios para os dias antes do primeiro dia do mês
+        for (int i = 1; i < firstDayOfWeek; i++) {
+            daysPanel.add(new JLabel(""));
+        }
+
+        // Adiciona os dias do mês
+        for (int i = 1; i <= daysInMonth; i++) {
+            final int day = i;
+            JButton dayButton = new JButton(String.valueOf(i));
+            dayButton.addActionListener(evt -> {
+                String dataSelecionada = String.format("%02d/%02d/%04d",
+                        day, tempCalendar.get(Calendar.MONTH) + 1, tempCalendar.get(Calendar.YEAR));
+                JOptionPane.showMessageDialog(null,
+                        "Data selecionada: " + dataSelecionada,
+                        "Data", JOptionPane.INFORMATION_MESSAGE);
+            });
+            daysPanel.add(dayButton);
+        }
+
+        mainPanel.add(daysPanel, BorderLayout.CENTER);
+        mainPanel.revalidate();
+        mainPanel.repaint();
+    }
+
+    private void updateMonthLabel(JLabel label, Calendar calendar) {
+        String[] months = {"Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+                "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"};
+        label.setText(months[calendar.get(Calendar.MONTH)] + " " + calendar.get(Calendar.YEAR));
+        label.setFont(label.getFont().deriveFont(Font.BOLD, 16));
+    }
+
+    private void abrirBlocoDeNotas() {
+        SwingUtilities.invokeLater(() -> {
+            JFrame blocoFrame = new JFrame("Bloco de Notas");
+            blocoFrame.setSize(500, 400);
+
+            JTextArea textArea = new JTextArea();
+            JScrollPane scrollPane = new JScrollPane(textArea);
+
+            JMenuBar menuBar = new JMenuBar();
+            JMenu fileMenu = new JMenu("Arquivo");
+
+            JMenuItem saveItem = new JMenuItem("Salvar");
+            saveItem.addActionListener(e -> salvarNotas(textArea));
+
+            JMenuItem openItem = new JMenuItem("Abrir");
+            openItem.addActionListener(e -> abrirNotas(textArea));
+
+            fileMenu.add(saveItem);
+            fileMenu.add(openItem);
+            menuBar.add(fileMenu);
+
+            blocoFrame.setJMenuBar(menuBar);
+            blocoFrame.add(scrollPane);
+            blocoFrame.setVisible(true);
+        });
+    }
+
+    private void salvarNotas(JTextArea textArea) {
+        JFileChooser fileChooser = new JFileChooser();
+        if (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
+            try (PrintWriter writer = new PrintWriter(fileChooser.getSelectedFile())) {
+                writer.write(textArea.getText());
+                JOptionPane.showMessageDialog(null, "Arquivo salvo com sucesso!");
+            } catch (IOException e) {
+                JOptionPane.showMessageDialog(null, "Erro ao salvar arquivo: " + e.getMessage(),
+                        "Erro", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void abrirNotas(JTextArea textArea) {
+        JFileChooser fileChooser = new JFileChooser();
+        if (fileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(fileChooser.getSelectedFile()))) {
+                StringBuilder content = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    content.append(line).append("\n");
+                }
+                textArea.setText(content.toString());
+            } catch (IOException e) {
+                JOptionPane.showMessageDialog(null, "Erro ao abrir arquivo: " + e.getMessage(),
+                        "Erro", JOptionPane.ERROR_MESSAGE);
+            }
+        }
     }
 
     private void toggleTelefoneField() {
@@ -148,7 +311,6 @@ public class Main {
         String email = emailCheckBox.isSelected() ? emailField.getText().trim() : "";
         String status = (String) statusCombo.getSelectedItem();
 
-        // Validação
         if (nome.isEmpty()) {
             JOptionPane.showMessageDialog(frame, "O nome é obrigatório!", "Erro", JOptionPane.ERROR_MESSAGE);
             return;
@@ -160,7 +322,6 @@ public class Main {
             return;
         }
 
-        // Validação de telefone
         if (telefoneCheckBox.isSelected() && !telefone.isEmpty()) {
             String regex = tipoTelefone.equals("Celular") ? "^\\(?\\d{2}\\)?[\\s-]?\\d{5}[\\s-]?\\d{4}$" : "^\\(?\\d{2}\\)?[\\s-]?\\d{4}[\\s-]?\\d{4}$";
             if (!telefone.matches(regex)) {
@@ -171,7 +332,6 @@ public class Main {
             }
         }
 
-        // Validação de email
         if (emailCheckBox.isSelected() && !email.isEmpty()) {
             String regex = "^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$";
             if (!email.matches(regex)) {
@@ -180,7 +340,6 @@ public class Main {
             }
         }
 
-        // Formata telefone
         if (telefoneCheckBox.isSelected() && !telefone.isEmpty()) {
             telefone = telefone.replaceAll("[^0-9]", "");
             if (tipoTelefone.equals("Celular")) {
@@ -196,7 +355,6 @@ public class Main {
             }
         }
 
-        // Salvar no CSV
         try (PrintWriter writer = new PrintWriter(new FileWriter(ARQUIVO_CSV, true))) {
             writer.println(String.format("%s,%s,%s,%s,%s", nome, tipoTelefone, telefone, email, status));
             JOptionPane.showMessageDialog(frame, "Contato salvo com sucesso!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
@@ -216,7 +374,6 @@ public class Main {
         }
 
         if (ordemAlfabetica) {
-            // Ordena por nome (ignorando maiúsculas/minúsculas)
             Collections.sort(contatos, (a, b) -> a[0].compareToIgnoreCase(b[0]));
             listarPorOrdemAlfabetica(contatos);
         } else {
@@ -264,7 +421,6 @@ public class Main {
         StringBuilder sb = new StringBuilder();
         sb.append("Contatos por Ordem Alfabética:\n\n");
 
-        // Agrupa contatos por letra inicial
         Map<Character, List<String[]>> contatosPorLetra = new TreeMap<>();
 
         for (String[] contato : contatos) {
@@ -273,7 +429,6 @@ public class Main {
             contatosPorLetra.get(letraInicial).add(contato);
         }
 
-        // Exibe apenas letras que possuem contatos
         for (Map.Entry<Character, List<String[]>> entry : contatosPorLetra.entrySet()) {
             char letra = entry.getKey();
             List<String[]> contatosDaLetra = entry.getValue();
@@ -303,7 +458,6 @@ public class Main {
             return;
         }
 
-        // Cria array de nomes para o JOptionPane
         String[] nomes = new String[contatos.size()];
         for (int i = 0; i < contatos.size(); i++) {
             nomes[i] = contatos.get(i)[0];
@@ -322,10 +476,8 @@ public class Main {
             return; // Usuário cancelou
         }
 
-        // Remove o contato selecionado
         contatos.removeIf(contato -> contato[0].equals(nomeSelecionado));
 
-        // Reescreve o arquivo CSV
         try (PrintWriter writer = new PrintWriter(new FileWriter(ARQUIVO_CSV))) {
             writer.println("Nome,TipoTelefone,Telefone,Email,Status"); // Cabeçalho
             for (String[] contato : contatos) {
