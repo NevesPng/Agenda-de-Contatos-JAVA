@@ -1,1 +1,1 @@
-Projeto de agenda de contatos focada em meio acadêmico, desenvolvido como trabalho para compor parcialmente a nota da prova oficial da disciplina "Estrutura de Dados", ministrada pelo Prof. Dr. Eduardo Hidenori Enari
+Projeto de agenda de contatos com enfoque universitário.
